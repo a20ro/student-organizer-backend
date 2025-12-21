@@ -61,3 +61,9 @@ composer.phar
 *.temp
 *.cache
 .cache/
+
+# Migration scripts (temporary)
+migrate_to_mysql.php
+import_to_mysql.php
+MYSQL_MIGRATION_GUIDE.md
+/storage/app/mysql_export/
