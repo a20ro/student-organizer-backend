@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../js/api.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; margin: 0; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #111827 100%); min-height: 100vh; width: 260px; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
+        .sidebar-item { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; color: #e5e7eb; margin-bottom: 0.25rem; text-decoration: none; font-size: 0.95rem; }
+        .sidebar-item i { width: 1.25rem; margin-right: 0.75rem; }
+        .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+        .sidebar-item.active { background: rgba(59,130,246,0.25); color: #fff; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .main-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar text-white p-6">
+        <div class="flex items-center mb-8">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i class="fas fa-shield-alt text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold">Admin Panel</h1>
+                <p class="text-[11px] text-blue-200">Student Tracker</p>
+            </div>
+        </div>
+        <nav>
+            <a href="dashboard.html" class="sidebar-item"><i class="fas fa-home"></i>Dashboard</a>
+            <a href="admins.html" class="sidebar-item"><i class="fas fa-user-shield"></i>Admins / Staff</a>
+            <a href="students.html" class="sidebar-item active"><i class="fas fa-user-graduate"></i>Students</a>
+            <a href="announcements.html" class="sidebar-item"><i class="fas fa-bullhorn"></i>Announcements</a>
+            <a href="notifications.html" class="sidebar-item"><i class="fas fa-bell"></i>Notifications</a>
+            <a href="audit-logs.html" class="sidebar-item"><i class="fas fa-list"></i>Audit Logs</a>
+        </nav>
+        <div class="pt-6 mt-6 border-t border-blue-900/60">
+            <button class="sidebar-item text-red-300 hover:text-red-200" onclick="window.location.href='login.html'">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Exit Admin</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="bg-white shadow-sm px-8 py-5 flex items-center justify-between sticky top-0 z-10">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Students</h2>
+                <p class="text-sm text-gray-500">Manage student accounts and profiles</p>
+            </div>
+            <div class="flex gap-3">
+                <button class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50" onclick="exportToXML('students')">
+                    <i class="fas fa-file-export mr-2"></i>Export XML Report
+                </button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700" onclick="openAddStudentModal()">
+                    <i class="fas fa-user-plus mr-2"></i>New Student
+                </button>
+            </div>
+        </header>
+
+        <section class="p-8 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="relative max-w-xs w-full">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input id="searchInput" class="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search students by name or email">
+                </div>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    <select id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All statuses</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Name</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Email</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Created</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Last Activity</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-600">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">
+                                Loading students...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add Student Modal -->
+    <div id="addStudentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-800">Add New Student</h3>
+                <button onclick="closeAddStudentModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="addStudentForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input type="text" id="addStudentName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="addStudentEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="addStudentPassword" required minlength="8" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                    <input type="password" id="addStudentPasswordConfirm" required minlength="8" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition">
+                        Create Student
+                    </button>
+                    <button type="button" onclick="closeAddStudentModal()" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="editStudentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-800">Edit Student</h3>
+                <button onclick="closeEditStudentModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="editStudentForm" class="p-6 space-y-4">
+                <input type="hidden" id="editStudentId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input type="text" id="editStudentName" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500" title="Name updates not supported">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="editStudentEmail" readonly class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500" title="Email updates not supported">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select id="editStudentRole" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="student">Student</option>
+                        <option value="admin">Admin</option>
+                        <option value="super_admin">Super Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="editStudentStatus" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition">
+                        Update Student
+                    </button>
+                    <button type="button" onclick="closeEditStudentModal()" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Student Modal -->
+    <div id="viewStudentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-800">Student Details</h3>
+                <button onclick="closeViewStudentModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="viewStudentContent" class="p-6">
+                <p class="text-gray-500">Loading student details...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let studentsList = [];
+        let editingStudentId = null;
+        function formatDateTime(value) {
+            if (!value) return '-';
+            try {
+                const d = new Date(value);
+                if (isNaN(d.getTime())) return value;
+                return d.toLocaleString();
+            } catch {
+                return value;
+            }
+        }
+
+        function renderStudents(students) {
+            studentsList = students; // Store for edit/delete functions
+            const tbody = document.getElementById('studentsTableBody');
+            if (!students || students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">No students found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = students.map(student => {
+                const status = student.status || 'active';
+                const statusColor = status === 'active'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700';
+
+                const createdAt = student.created_at || '-';
+                const lastActivity = student.last_login || student.updated_at || '-';
+
+                return `
+                    <tr class="border-b last:border-0">
+                        <td class="px-4 py-3 font-medium text-gray-800">${student.name || '-'}</td>
+                        <td class="px-4 py-3 text-gray-600">${student.email || '-'}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-full text-xs ${statusColor}">${status}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500">${formatDateTime(createdAt)}</td>
+                        <td class="px-4 py-3 text-gray-500">${formatDateTime(lastActivity)}</td>
+                        <td class="px-4 py-3 text-right space-x-2">
+                            <button onclick="viewStudent(${student.id})" class="text-blue-600 hover:text-blue-800" title="View Details"><i class="fas fa-eye"></i></button>
+                            <button onclick="editStudent(${student.id})" class="text-blue-600 hover:text-blue-800" title="Edit"><i class="fas fa-pen"></i></button>
+                            <button onclick="toggleStudentStatus(${student.id}, '${status}')" class="text-amber-600 hover:text-amber-800" title="Activate / Suspend"><i class="fas fa-user-slash"></i></button>
+                            <button onclick="resetStudentPassword(${student.id}, '${student.name || student.email}')" class="text-sky-600 hover:text-sky-800" title="Reset Password"><i class="fas fa-key"></i></button>
+                            <button onclick="deleteStudent(${student.id}, '${student.name || student.email}')" class="text-red-600 hover:text-red-800" title="Delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function ensureAdminAccessStudentsPage() {
+            const token = window.api.getToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            try {
+                const response = await window.api.getCurrentUser();
+                let user = response;
+                if (response.data && response.data.user) {
+                    user = response.data.user;
+                } else if (response.data) {
+                    user = response.data;
+                } else if (response.user) {
+                    user = response.user;
+                }
+                // Allow both admin and super_admin roles
+                if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+                    window.api.removeToken();
+                    window.location.href = 'login.html';
+                    return null;
+                }
+                return user;
+            } catch (error) {
+                console.error('Admin auth check failed:', error);
+                window.api.removeToken();
+                window.location.href = 'login.html';
+                return null;
+            }
+        }
+
+        async function loadStudents() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            try {
+                const response = await window.api.getAdminUsers({
+                    role: 'student',
+                    status: statusFilter || undefined,
+                });
+
+                // Handle paginated structure like { success, data: { data: [...] } }
+                let students = response;
+                if (students.data && Array.isArray(students.data)) {
+                    students = students.data;
+                } else if (students.data && students.data.data && Array.isArray(students.data.data)) {
+                    students = students.data.data;
+                } else if (Array.isArray(students.data)) {
+                    students = students.data;
+                } else if (!Array.isArray(students)) {
+                    students = [];
+                }
+
+                renderStudents(students);
+            } catch (error) {
+                console.error('Failed to load students:', error);
+                const tbody = document.getElementById('studentsTableBody');
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-red-500 text-sm">Failed to load students.</td></tr>';
+            }
+        }
+
+        function viewStudent(id) {
+            const student = studentsList.find(s => s.id === id);
+            if (!student) {
+                alert('Student not found');
+                return;
+            }
+
+            const content = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Name</label>
+                            <p class="text-gray-800 font-medium">${student.name || '-'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Email</label>
+                            <p class="text-gray-800">${student.email || '-'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Role</label>
+                            <p class="text-gray-800">${student.role || 'student'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Status</label>
+                            <span class="px-2 py-1 rounded-full text-xs ${student.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${student.status || 'active'}</span>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Created</label>
+                            <p class="text-gray-800">${formatDateTime(student.created_at)}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Last Login</label>
+                            <p class="text-gray-800">${formatDateTime(student.last_login)}</p>
+                        </div>
+                        ${student.major ? `<div><label class="text-sm font-medium text-gray-500">Major</label><p class="text-gray-800">${student.major}</p></div>` : ''}
+                        ${student.university ? `<div><label class="text-sm font-medium text-gray-500">University</label><p class="text-gray-800">${student.university}</p></div>` : ''}
+                    </div>
+                </div>
+            `;
+            document.getElementById('viewStudentContent').innerHTML = content;
+            document.getElementById('viewStudentModal').classList.remove('hidden');
+        }
+
+        function closeViewStudentModal() {
+            document.getElementById('viewStudentModal').classList.add('hidden');
+        }
+
+        function editStudent(id) {
+            const student = studentsList.find(s => s.id === id);
+            if (!student) {
+                alert('Student not found');
+                return;
+            }
+
+            editingStudentId = id;
+            document.getElementById('editStudentId').value = id;
+            document.getElementById('editStudentName').value = student.name || '';
+            document.getElementById('editStudentEmail').value = student.email || '';
+            document.getElementById('editStudentRole').value = student.role || 'student';
+            document.getElementById('editStudentStatus').value = student.status || 'active';
+            document.getElementById('editStudentModal').classList.remove('hidden');
+        }
+
+        function closeEditStudentModal() {
+            document.getElementById('editStudentModal').classList.add('hidden');
+            document.getElementById('editStudentForm').reset();
+            editingStudentId = null;
+        }
+
+        async function toggleStudentStatus(id, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+            if (!confirm(`Are you sure you want to ${newStatus === 'active' ? 'activate' : 'suspend'} this student?`)) {
+                return;
+            }
+
+            try {
+                if (newStatus === 'active') {
+                    await window.api.activateAdminUser(id);
+                } else {
+                    await window.api.suspendAdminUser(id);
+                }
+                await loadStudents();
+            } catch (error) {
+                console.error('Failed to update student status:', error);
+                const errorMsg = error.message || error.data?.message || 'Failed to update student status. Please try again.';
+                alert(errorMsg);
+            }
+        }
+
+        async function resetStudentPassword(id, name) {
+            if (!confirm(`Reset password for student "${name}"? A new password will be generated and sent to their email.`)) {
+                return;
+            }
+
+            try {
+                // TODO: Add reset password API endpoint if backend supports it
+                alert('Password reset functionality will be implemented when backend endpoint is available.');
+                // await window.api.resetStudentPassword(id);
+            } catch (error) {
+                console.error('Failed to reset password:', error);
+                alert('Failed to reset password. Please try again.');
+            }
+        }
+
+        async function deleteStudent(id, name) {
+            if (!confirm(`Are you sure you want to delete student "${name}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                await window.api.deleteAdminUser(id);
+                await loadStudents();
+            } catch (error) {
+                console.error('Failed to delete student:', error);
+                const errorMsg = error.message || error.data?.message || 'Failed to delete student. Please try again.';
+                alert(errorMsg);
+            }
+        }
+
+        document.getElementById('editStudentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = editingStudentId;
+            const data = {
+                role: document.getElementById('editStudentRole').value,
+                status: document.getElementById('editStudentStatus').value,
+            };
+
+            try {
+                await window.api.updateAdminUser(id, data);
+                closeEditStudentModal();
+                await loadStudents();
+            } catch (error) {
+                console.error('Failed to update student:', error);
+                let errorMsg = error.message || 'Failed to update student. Please try again.';
+                if (error.data && error.data.errors) {
+                    const validationErrors = Object.entries(error.data.errors)
+                        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+                        .join('\n');
+                    errorMsg = `Validation errors:\n${validationErrors}`;
+                } else if (error.data && error.data.message) {
+                    errorMsg = error.data.message;
+                }
+                alert(errorMsg);
+            }
+        });
+
+        document.getElementById('editStudentModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editStudentModal') {
+                closeEditStudentModal();
+            }
+        });
+
+        function exportToXML(type) {
+            const data = studentsList || [];
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<report>
+    <type>${type}</type>
+    <generated>${new Date().toISOString()}</generated>
+    <filters>
+        <status>${document.getElementById('statusFilter').value || 'all'}</status>
+    </filters>
+    <count>${data.length}</count>
+    <items>
+${data.map(item => `        <item>
+            <id>${item.id || ''}</id>
+            <name>${escapeXML(item.name || '')}</name>
+            <email>${escapeXML(item.email || '')}</email>
+            <role>${escapeXML(item.role || '')}</role>
+            <status>${escapeXML(item.status || '')}</status>
+            <created_at>${escapeXML(item.created_at || '')}</created_at>
+            <last_login>${escapeXML(item.last_login || item.updated_at || '')}</last_login>
+            ${item.major ? `<major>${escapeXML(item.major)}</major>` : ''}
+            ${item.university ? `<university>${escapeXML(item.university)}</university>` : ''}
+        </item>`).join('\n')}
+    </items>
+</report>`;
+            downloadXML(xml, `students-report-${new Date().toISOString().split('T')[0]}.xml`);
+        }
+
+        function escapeXML(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+        }
+
+        function downloadXML(xml, filename) {
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function openAddStudentModal() {
+            document.getElementById('addStudentModal').classList.remove('hidden');
+        }
+
+        function closeAddStudentModal() {
+            document.getElementById('addStudentModal').classList.add('hidden');
+            document.getElementById('addStudentForm').reset();
+        }
+
+        document.getElementById('addStudentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('addStudentPassword').value;
+            const passwordConfirm = document.getElementById('addStudentPasswordConfirm').value;
+            
+            if (password !== passwordConfirm) {
+                alert('Passwords do not match');
+                return;
+            }
+
+            const data = {
+                name: document.getElementById('addStudentName').value,
+                email: document.getElementById('addStudentEmail').value,
+                password: password,
+                password_confirmation: passwordConfirm,
+            };
+
+            try {
+                await window.api.createStudent(data);
+                closeAddStudentModal();
+                await loadStudents();
+                alert('Student created successfully!');
+            } catch (error) {
+                console.error('Failed to create student:', error);
+                let errorMsg = error.message || 'Failed to create student. Please try again.';
+                if (error.data && error.data.errors) {
+                    const validationErrors = Object.entries(error.data.errors)
+                        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+                        .join('\n');
+                    errorMsg = `Validation errors:\n${validationErrors}`;
+                } else if (error.data && error.data.message) {
+                    errorMsg = error.data.message;
+                }
+                alert(errorMsg);
+            }
+        });
+
+        document.getElementById('addStudentModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addStudentModal') {
+                closeAddStudentModal();
+            }
+        });
+
+        document.getElementById('viewStudentModal').addEventListener('click', (e) => {
+            if (e.target.id === 'viewStudentModal') {
+                closeViewStudentModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await ensureAdminAccessStudentsPage();
+            if (!user) return;
+
+            await loadStudents();
+
+            document.getElementById('statusFilter').addEventListener('change', loadStudents);
+            
+            // Add search functionality
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filtered = studentsList.filter(student => 
+                    (student.name || '').toLowerCase().includes(searchTerm) ||
+                    (student.email || '').toLowerCase().includes(searchTerm)
+                );
+                renderStudents(filtered);
+            });
+        });
+
+        window.viewStudent = viewStudent;
+        window.editStudent = editStudent;
+        window.toggleStudentStatus = toggleStudentStatus;
+        window.resetStudentPassword = resetStudentPassword;
+        window.deleteStudent = deleteStudent;
+        window.closeEditStudentModal = closeEditStudentModal;
+        window.closeViewStudentModal = closeViewStudentModal;
+        window.openAddStudentModal = openAddStudentModal;
+        window.closeAddStudentModal = closeAddStudentModal;
+        window.exportToXML = exportToXML;
+    </script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Student Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../js/api.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; margin: 0; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #111827 100%); min-height: 100vh; width: 260px; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
+        .sidebar-item { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; color: #e5e7eb; margin-bottom: 0.25rem; text-decoration: none; font-size: 0.95rem; }
+        .sidebar-item i { width: 1.25rem; margin-right: 0.75rem; }
+        .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+        .sidebar-item.active { background: rgba(59,130,246,0.25); color: #fff; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar text-white p-6">
+        <div class="flex items-center mb-8">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i class="fas fa-shield-alt text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold">Admin Panel</h1>
+                <p class="text-[11px] text-blue-200">Student Tracker</p>
+            </div>
+        </div>
+        <nav>
+            <a href="dashboard.html" class="sidebar-item active"><i class="fas fa-home"></i>Dashboard</a>
+            <a href="admins.html" class="sidebar-item"><i class="fas fa-user-shield"></i>Admins / Staff</a>
+            <a href="students.html" class="sidebar-item"><i class="fas fa-user-graduate"></i>Students</a>
+            <a href="announcements.html" class="sidebar-item"><i class="fas fa-bullhorn"></i>Announcements</a>
+            <a href="notifications.html" class="sidebar-item"><i class="fas fa-bell"></i>Notifications</a>
+            <a href="audit-logs.html" class="sidebar-item"><i class="fas fa-list"></i>Audit Logs</a>
+        </nav>
+        <div class="pt-6 mt-6 border-t border-blue-900/60">
+            <button class="sidebar-item text-red-300 hover:text-red-200" onclick="window.location.href='login.html'">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Exit Admin</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="bg-white shadow-sm px-8 py-5 flex items-center justify-between sticky top-0 z-10">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+                <p class="text-sm text-gray-500">Overview of platform activity</p>
+            </div>
+            <div class="flex items-center gap-4 text-sm text-gray-500">
+                <i class="fas fa-user-shield text-blue-600"></i>
+                <span id="adminName">Admin</span>
+            </div>
+        </header>
+
+        <section class="p-8 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 uppercase">Total Students</p>
+                        <p class="text-3xl font-bold text-gray-800" id="statStudents">0</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 uppercase">Total Admins</p>
+                        <p class="text-3xl font-bold text-gray-800" id="statAdmins">0</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 uppercase">Announcements Sent</p>
+                        <p class="text-3xl font-bold text-gray-800" id="statAnnouncements">0</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Recent Admin Activity</h3>
+                        <a href="audit-logs.html" class="text-xs text-blue-600 hover:text-blue-700">View all →</a>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        <p>Hook this to the audit logs API to show recent actions.</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">System Status</h3>
+                    </div>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500"></span>API status: <span class="font-medium">OK</span></li>
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500"></span>Auth service: <span class="font-medium">OK</span></li>
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-400"></span>Reporting: <span class="font-medium">Stubbed (frontend only)</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let authCheckComplete = false;
+        let redirecting = false;
+
+        async function ensureAdminAccess() {
+            // Prevent multiple checks
+            if (authCheckComplete) {
+                return window.authenticatedUser || null;
+            }
+
+            const token = window.api.getToken();
+            if (!token) {
+                if (!redirecting) {
+                    redirecting = true;
+                    window.location.href = 'login.html';
+                }
+                return null;
+            }
+            
+            try {
+                const response = await window.api.getCurrentUser();
+                
+                let user = null;
+                
+                // Try all possible response structures
+                if (response) {
+                    if (response.data && response.data.user) {
+                        user = response.data.user;
+                    } else if (response.data && response.data.role) {
+                        user = response.data;
+                    } else if (response.data) {
+                        user = response.data;
+                    } else if (response.user) {
+                        user = response.user;
+                    } else if (response.role) {
+                        user = response;
+                    }
+                }
+                
+                // Check if user exists and has a role
+                if (!user) {
+                    if (!redirecting) {
+                        redirecting = true;
+                        window.api.removeToken();
+                        window.location.href = 'login.html';
+                    }
+                    return null;
+                }
+                
+                // Allow both admin and super_admin roles
+                const role = user.role;
+                if (role !== 'admin' && role !== 'super_admin') {
+                    if (!redirecting) {
+                        redirecting = true;
+                        window.api.removeToken();
+                        window.location.href = 'login.html';
+                    }
+                    return null;
+                }
+                
+                // Success - mark as authenticated
+                authCheckComplete = true;
+                window.authenticatedUser = user;
+                
+                // Set admin name
+                document.getElementById('adminName').textContent = user.name || user.email || 'Admin';
+                return user;
+            } catch (error) {
+                // Only redirect on auth errors (401, 403)
+                if (error.status === 401 || error.status === 403) {
+                    if (!redirecting) {
+                        redirecting = true;
+                        window.api.removeToken();
+                        window.location.href = 'login.html';
+                    }
+                } else if (error.isNetworkError) {
+                    alert('Network error. Please check your connection and refresh the page.');
+                } else {
+                    if (!redirecting) {
+                        redirecting = true;
+                        window.api.removeToken();
+                        window.location.href = 'login.html';
+                    }
+                }
+                return null;
+            }
+        }
+
+        async function loadAdminAnalytics() {
+            try {
+                const data = await window.api.getAdminAnalytics();
+                const payload = data.data || data;
+
+                // Prefer explicit fields if backend adds them
+                let totalStudents = payload.total_students;
+                let totalAdmins = payload.total_admins;
+                let totalAnnouncements = payload.total_announcements;
+
+                // Fallbacks to match your existing structure: data.users.total, data.users.students, data.users.admins, etc.
+                if (payload.users) {
+                    if (totalStudents === undefined && payload.users.students !== undefined) {
+                        totalStudents = payload.users.students;
+                    }
+                    if (totalAdmins === undefined && payload.users.admins !== undefined) {
+                        totalAdmins = payload.users.admins;
+                    }
+                }
+                if (payload.announcements) {
+                    if (totalAnnouncements === undefined && typeof payload.announcements === 'number') {
+                        totalAnnouncements = payload.announcements;
+                    } else if (totalAnnouncements === undefined && payload.announcements.total !== undefined) {
+                        totalAnnouncements = payload.announcements.total;
+                    } else if (totalAnnouncements === undefined && payload.announcements.sent !== undefined) {
+                        totalAnnouncements = payload.announcements.sent;
+                    }
+                }
+
+                // If announcements count is still not available, fetch announcements directly
+                if (totalAnnouncements === undefined) {
+                    try {
+                        // Try to fetch sent announcements first
+                        let announcementsResponse;
+                        try {
+                            announcementsResponse = await window.api.getAdminAnnouncements({ status: 'sent' });
+                        } catch (e) {
+                            // If status filter doesn't work, fetch all announcements
+                            announcementsResponse = await window.api.getAdminAnnouncements({});
+                        }
+                        
+                        let announcements = announcementsResponse;
+                        if (announcements.data && Array.isArray(announcements.data)) {
+                            announcements = announcements.data;
+                        } else if (announcements.data && announcements.data.data && Array.isArray(announcements.data.data)) {
+                            announcements = announcements.data.data;
+                        } else if (Array.isArray(announcements.announcements)) {
+                            announcements = announcements.announcements;
+                        } else if (!Array.isArray(announcements)) {
+                            announcements = [];
+                        }
+                        
+                        // Count sent announcements (those with sent_at or status === 'sent')
+                        totalAnnouncements = announcements.filter(a => {
+                            const status = a.status || (a.sent_at ? 'sent' : a.scheduled_at ? 'scheduled' : 'draft');
+                            return status === 'sent' || a.sent_at;
+                        }).length;
+                    } catch (announcementsError) {
+                        console.error('Failed to fetch announcements for count:', announcementsError);
+                        totalAnnouncements = 0;
+                    }
+                }
+
+                if (totalStudents !== undefined) {
+                    document.getElementById('statStudents').textContent = totalStudents;
+                }
+                if (totalAdmins !== undefined) {
+                    document.getElementById('statAdmins').textContent = totalAdmins;
+                }
+                if (totalAnnouncements !== undefined) {
+                    document.getElementById('statAnnouncements').textContent = totalAnnouncements;
+                }
+            } catch (error) {
+                console.error('Failed to load admin analytics:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await ensureAdminAccess();
+            if (!user) {
+                // Access denied - redirect already handled in ensureAdminAccess
+                return;
+            }
+            
+            // User is authenticated, load analytics
+            try {
+                await loadAdminAnalytics();
+            } catch (error) {
+                console.error('Failed to load admin analytics:', error);
+            }
+            
+            // Clean up URL if we came from login
+            if (window.location.search.includes('from=login')) {
+                window.history.replaceState({}, '', 'dashboard.html');
+            }
+        });
+    </script>
+</body>
+</html>

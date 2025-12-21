@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar - Student Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: #f8fafc;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 3px solid #60a5fa;
+        }
+        
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+            gap: 16px;
+        }
+        
+        @media (min-width: 640px) {
+            .calendar-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .calendar-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .calendar-grid {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
+        }
+        
+        @media (min-width: 1280px) {
+            .calendar-grid {
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+            }
+        }
+        
+        .day-card {
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .day-card:hover {
+            border-left-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            gap: 6px;
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        /* Calendar day cell improvements */
+        .day-cell {
+            min-height: 100px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .day-cell:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .day-cell.has-items {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+        
+        .day-cell.today {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        }
+        
+        .event-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .event-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        
+        .event-indicator.assessment {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .event-indicator.event {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        /* Day detail popup */
+        .day-popup {
+            position: fixed;
+            z-index: 100;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e2e8f0;
+            max-width: 400px;
+            width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .day-popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(2px);
+            z-index: 99;
+        }
+        
+        /* Stacked dots for multiple items */
+        .stacked-dots {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar text-white p-6">
+        <!-- Logo -->
+        <div class="flex items-center mb-10">
+            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i class="fas fa-graduation-cap text-2xl text-blue-600"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold">Student Tracker</h1>
+                <p class="text-xs text-blue-200">Organize & Succeed</p>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="space-y-1">
+            <a href="index.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-home w-5 mr-3"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            <a href="semesters.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-calendar-alt w-5 mr-3"></i>
+                <span class="font-medium">Semesters</span>
+            </a>
+            <a href="courses.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-book w-5 mr-3"></i>
+                <span class="font-medium">Courses</span>
+            </a>
+            <a href="assessments.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-clipboard-list w-5 mr-3"></i>
+                <span class="font-medium">Assessments</span>
+            </a>
+            <a href="notes.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-sticky-note w-5 mr-3"></i>
+                <span class="font-medium">Notes</span>
+            </a>
+            <a href="/events.html" class="sidebar-item active flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-calendar w-5 mr-3"></i>
+                <span class="font-medium">Events</span>
+            </a>
+            <a href="budget.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-wallet w-5 mr-3"></i>
+                <span class="font-medium">Budget</span>
+            </a>
+            <a href="goals.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-bullseye w-5 mr-3"></i>
+                <span class="font-medium">Goals</span>
+            </a>
+            <a href="tasks.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-tasks w-5 mr-3"></i>
+                <span class="font-medium">Tasks</span>
+            </a>
+            <a href="habits.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-chart-line w-5 mr-3"></i>
+                <span class="font-medium">Habits</span>
+            </a>
+            <div class="pt-6 mt-6 border-t border-blue-400 border-opacity-30">
+                <a href="#" id="logoutButton" class="sidebar-item flex items-center px-4 py-3 rounded-lg text-red-200 hover:text-red-100 hover:bg-red-500 hover:bg-opacity-20">
+                    <i class="fas fa-sign-out-alt w-5 mr-3"></i>
+                    <span class="font-medium">Logout</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="bg-white shadow-sm px-8 py-5 flex items-center justify-between sticky top-0 z-40">
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Calendar</p>
+                <div class="flex items-center space-x-3">
+                    <button id="prevMonth" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 id="monthLabel" class="text-2xl font-bold text-gray-800"></h2>
+                    <button id="nextMonth" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="refreshButton" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+                    <i class="fas fa-rotate-right"></i>
+                    <span>Refresh</span>
+                </button>
+                <button id="addEventButton" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Add event</span>
+                </button>
+                <a href="assessments.html" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Add assessment</span>
+                </a>
+            </div>
+        </header>
+        
+        <section class="p-8 space-y-6">
+            <!-- Filters / Legend -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-wrap items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-800 font-semibold">30-day calendar</p>
+                        <p class="text-sm text-gray-500" id="rangeLabel"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap ml-auto">
+                    <label class="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="toggleAssessments" class="rounded text-blue-600" checked>
+                        <span class="text-sm font-medium">Assessments</span>
+                    </label>
+                    <label class="flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-3 py-2 rounded-lg cursor-pointer">
+                        <input type="checkbox" id="toggleEvents" class="rounded text-emerald-600" checked>
+                        <span class="text-sm font-medium">Events</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Calendar grid -->
+            <div id="calendarContainer" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div id="calendarLoading" class="flex items-center justify-center py-14 text-gray-500">
+                    <div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent mr-3"></div>
+                    <span>Loading calendar...</span>
+                </div>
+                <div id="calendarGrid" class="calendar-grid hidden"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl p-6 relative">
+            <button id="closeEventModal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Add Event</h3>
+            <form id="eventForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                    <input type="text" name="title" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                        <input type="date" name="date" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time *</label>
+                        <input type="time" name="time" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input type="text" name="location" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Room 101 or Zoom link">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reminder before</label>
+                    <input type="text" name="reminder_before" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 30 minutes">
+                </div>
+                <div class="pt-2 flex space-x-3">
+                    <button type="button" id="cancelEvent" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let calendarData = {};
+        let showAssessments = true;
+        let showEvents = true;
+        let startDate = new Date();
+        let endDate = new Date();
+        let currentMonthDate = new Date(); // will be set to user-created month if available
+        let savingEvent = false;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.auth.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Logout
+            document.getElementById('logoutButton').addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await window.api.logout();
+                } catch (error) {
+                    console.error('Logout error:', error);
+                } finally {
+                    window.location.href = 'login.html';
+                }
+            });
+            
+            document.getElementById('toggleAssessments').addEventListener('change', (e) => {
+                showAssessments = e.target.checked;
+                renderCalendar();
+            });
+            
+            document.getElementById('toggleEvents').addEventListener('change', (e) => {
+                showEvents = e.target.checked;
+                renderCalendar();
+            });
+            
+            document.getElementById('refreshButton').addEventListener('click', () => {
+                loadCalendarData();
+            });
+
+            document.getElementById('addEventButton').addEventListener('click', openEventModal);
+            document.getElementById('closeEventModal').addEventListener('click', closeEventModal);
+            document.getElementById('cancelEvent').addEventListener('click', (e) => {
+                e.preventDefault();
+                closeEventModal();
+            });
+            document.getElementById('eventForm').addEventListener('submit', handleEventSubmit);
+            
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+                loadCalendarData();
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+                loadCalendarData();
+            });
+            
+            initMonthFromUser().then(loadCalendarData);
+        });
+        
+        async function initMonthFromUser() {
+            try {
+                const userRes = await window.api.getCurrentUser();
+                const user = userRes.user || userRes.data || userRes;
+                const createdAt = user?.created_at;
+                if (createdAt) {
+                    const parsed = new Date(createdAt);
+                    if (!isNaN(parsed.getTime())) {
+                        currentMonthDate = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not load user info for month init, defaulting to current month.', err);
+            }
+            currentMonthDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        }
+        
+        function formatDateKey(date) {
+            // Use local date parts to avoid timezone shifting the day
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function formatDisplayDate(date) {
+            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+        
+        function formatRangeLabel(start, end) {
+            return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+        }
+
+        function openEventModal() {
+            const form = document.getElementById('eventForm');
+            form.reset();
+            document.getElementById('eventModal').classList.remove('hidden');
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.add('hidden');
+        }
+
+        async function handleEventSubmit(e) {
+            e.preventDefault();
+            if (savingEvent) return;
+            savingEvent = true;
+
+            const formData = new FormData(e.target);
+            const payload = {
+                title: formData.get('title')?.trim(),
+                description: formData.get('description')?.trim() || null,
+                date: formData.get('date'),
+                time: formData.get('time'),
+                location: formData.get('location')?.trim() || null,
+                reminder_before: formData.get('reminder_before')?.trim() || null,
+            };
+
+            try {
+                await window.api.createEvent(payload);
+                closeEventModal();
+                await loadCalendarData();
+            } catch (error) {
+                console.error('Error creating event:', error);
+                alert(error?.message || 'Failed to create event');
+            } finally {
+                savingEvent = false;
+            }
+        }
+        
+        async function loadCalendarData() {
+            document.getElementById('calendarLoading').classList.remove('hidden');
+            document.getElementById('calendarGrid').classList.add('hidden');
+            
+            startDate = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth(), 1);
+            endDate = new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth() + 1, 0);
+            const monthLabel = startDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+            document.getElementById('monthLabel').textContent = monthLabel;
+            document.getElementById('rangeLabel').textContent = `Showing ${formatRangeLabel(startDate, endDate)}`;
+            
+            try {
+                const [assessments, events] = await Promise.all([
+                    loadAssessmentsInRange(startDate, endDate),
+                    loadEventsInRange(startDate, endDate)
+                ]);
+                
+                calendarData = buildCalendarData(assessments, events);
+                renderCalendar();
+            } catch (error) {
+                console.error('Error loading calendar:', error);
+                document.getElementById('calendarLoading').innerHTML = `
+                    <div class="text-center text-red-600">
+                        <p class="font-semibold mb-2">Failed to load calendar.</p>
+                        <p class="text-sm text-red-500">Please try again.</p>
+                    </div>
+                `;
+            } finally {
+                document.getElementById('calendarLoading').classList.add('hidden');
+                document.getElementById('calendarGrid').classList.remove('hidden');
+            }
+        }
+        
+        async function loadAssessmentsInRange(start, end) {
+            const results = [];
+            try {
+                const semestersResponse = await window.api.getSemesters();
+                const semesters = semestersResponse.data || semestersResponse.semesters || semestersResponse || [];
+                
+                for (const semester of semesters) {
+                    let courses = [];
+                    try {
+                        const coursesResponse = await window.api.getCourses(semester.id);
+                        courses = coursesResponse.data || coursesResponse.courses || coursesResponse || [];
+                    } catch (error) {
+                        console.error(`Error loading courses for semester ${semester.id}:`, error);
+                    }
+                    
+                    for (const course of courses) {
+                        try {
+                            const assessmentsResponse = await window.api.getAssessments(course.id);
+                            const assessments = assessmentsResponse.data || assessmentsResponse.assessments || assessmentsResponse || [];
+                            
+                            assessments.forEach(a => {
+                                if (!a.due_date) return;
+                                const date = new Date(a.due_date);
+                                if (isNaN(date.getTime())) return;
+                                if (date >= start && date <= end) {
+                                    results.push({
+                                        ...a,
+                                        course_name: course.name,
+                                        course_code: course.code,
+                                        semester_title: semester.title,
+                                    });
+                                }
+                            });
+                        } catch (error) {
+                            console.error(`Error loading assessments for course ${course.id}:`, error);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading assessments:', error);
+            }
+            return results;
+        }
+        
+        async function loadEventsInRange(start, end) {
+            try {
+                const params = {
+                    start_date: formatDateKey(start),
+                    end_date: formatDateKey(end),
+                };
+                const response = await window.api.getEvents(params);
+                const events = response.data || response.events || response || [];
+                return events.filter(ev => {
+                    const dateStr = getEventDate(ev);
+                    if (!dateStr) return false;
+                    const d = new Date(dateStr);
+                    return !isNaN(d.getTime()) && d >= start && d <= end;
+                });
+            } catch (error) {
+                console.warn('Events endpoint not available or failed, skipping events.', error);
+                return [];
+            }
+        }
+        
+        function getEventDate(event) {
+            return event.start_date || event.date || event.start_time || event.start_at || null;
+        }
+        
+        function buildCalendarData(assessments, events) {
+            const data = {};
+            assessments.forEach(a => {
+                const key = formatDateKey(new Date(a.due_date));
+                if (!data[key]) data[key] = { assessments: [], events: [] };
+                data[key].assessments.push(a);
+            });
+            events.forEach(ev => {
+                const dateValue = getEventDate(ev);
+                if (!dateValue) return;
+                const key = formatDateKey(new Date(dateValue));
+                if (!data[key]) data[key] = { assessments: [], events: [] };
+                data[key].events.push(ev);
+            });
+            return data;
+        }
+        
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const days = [];
+            const cursor = new Date(startDate);
+            while (cursor <= endDate) {
+                days.push(new Date(cursor));
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            
+            grid.innerHTML = days.map(day => renderDayCell(day)).join('');
+            
+            // Add click handlers for day cells
+            grid.querySelectorAll('.day-cell').forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const dateKey = cell.dataset.date;
+                    if (dateKey) {
+                        showDayPopup(dateKey);
+                    }
+                });
+            });
+        }
+        
+        function renderDayCell(day) {
+            const key = formatDateKey(day);
+            const items = calendarData[key] || { assessments: [], events: [] };
+            const assessments = showAssessments ? items.assessments : [];
+            const events = showEvents ? items.events : [];
+            const hasItems = assessments.length + events.length > 0;
+            const isToday = key === formatDateKey(new Date());
+            const totalItems = assessments.length + events.length;
+            
+            // Create compact indicators
+            let indicators = '';
+            
+            // Show up to 3 items with names, then show "+X more"
+            const maxVisible = 3;
+            const allItems = [
+                ...assessments.map(a => ({ type: 'assessment', title: a.title, course: a.course_code || a.course_name })),
+                ...events.map(e => ({ type: 'event', title: e.title || e.name || 'Event' }))
+            ];
+            
+            const visibleItems = allItems.slice(0, maxVisible);
+            const hiddenCount = allItems.length - maxVisible;
+            
+            if (visibleItems.length > 0) {
+                indicators = visibleItems.map(item => {
+                    if (item.type === 'assessment') {
+                        return `
+                            <div class="event-indicator assessment" title="${item.title}">
+                                <span class="event-dot bg-blue-500"></span>
+                                <span class="truncate">${item.title}</span>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="event-indicator event" title="${item.title}">
+                                <span class="event-dot bg-emerald-500"></span>
+                                <span class="truncate">${item.title}</span>
+                            </div>
+                        `;
+                    }
+                }).join('');
+                
+                if (hiddenCount > 0) {
+                    indicators += `
+                        <div class="text-xs text-gray-500 font-medium mt-1">
+                            +${hiddenCount} more
+                        </div>
+                    `;
+                }
+            }
+            
+            // Summary dots at bottom
+            let summaryDots = '';
+            if (hasItems) {
+                const blueDots = assessments.slice(0, 5).map(() => '<span class="event-dot bg-blue-500"></span>').join('');
+                const greenDots = events.slice(0, 5).map(() => '<span class="event-dot bg-emerald-500"></span>').join('');
+                summaryDots = `
+                    <div class="stacked-dots mt-2 pt-2 border-t border-gray-100">
+                        ${blueDots}${greenDots}
+                        ${totalItems > 10 ? '<span class="text-[10px] text-gray-400 ml-1">...</span>' : ''}
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="day-cell bg-white border border-gray-200 rounded-xl p-3 flex flex-col ${isToday ? 'today' : ''} ${hasItems ? 'has-items' : ''}" data-date="${key}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-800'}">${day.getDate()}</span>
+                            <span class="text-xs text-gray-400">${day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+                        </div>
+                        ${isToday ? '<span class="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-medium">TODAY</span>' : ''}
+                    </div>
+                    <div class="flex-1 space-y-1 overflow-hidden">
+                        ${indicators || '<p class="text-xs text-gray-400 italic">No items</p>'}
+                    </div>
+                    ${summaryDots}
+                </div>
+            `;
+        }
+        
+        function showDayPopup(dateKey) {
+            const items = calendarData[dateKey] || { assessments: [], events: [] };
+            const assessments = showAssessments ? items.assessments : [];
+            const events = showEvents ? items.events : [];
+            const hasItems = assessments.length + events.length > 0;
+            
+            if (!hasItems) return;
+            
+            const date = new Date(dateKey);
+            const dateStr = date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            
+            // Build assessment items
+            const assessmentItems = assessments.map(a => {
+                const statusBadge = getStatusBadge(a.status);
+                return `
+                    <div class="flex items-start gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 border border-blue-200 flex-shrink-0">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap mb-1">
+                                <p class="font-semibold text-gray-800">${a.title}</p>
+                                <span class="text-[11px] ${statusBadge.color} px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                    <i class="fas ${statusBadge.icon}"></i>${statusBadge.text}
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600">${a.course_name || ''} ${a.course_code ? `(${a.course_code})` : ''}</p>
+                            ${a.weight ? `<p class="text-xs text-gray-500 mt-1">Weight: ${a.weight}%</p>` : ''}
+                            ${a.google_event_link ? `<a href="${a.google_event_link}" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 mt-2"><i class="fab fa-google"></i> Open in Google Calendar</a>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Build event items
+            const eventItems = events.map(ev => {
+                const title = ev.title || ev.name || 'Event';
+                const link = ev.google_event_link || ev.link;
+                return `
+                    <div class="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-600 border border-emerald-200 flex-shrink-0">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-gray-800 mb-1">${title}</p>
+                            ${ev.description ? `<p class="text-sm text-gray-600 mb-1">${ev.description}</p>` : ''}
+                            ${ev.location ? `<p class="text-xs text-gray-500"><i class="fas fa-map-marker-alt mr-1"></i>${ev.location}</p>` : ''}
+                            ${ev.time ? `<p class="text-xs text-gray-500"><i class="fas fa-clock mr-1"></i>${ev.time}</p>` : ''}
+                            ${link ? `<a href="${link}" target="_blank" class="text-xs text-emerald-600 hover:text-emerald-700 inline-flex items-center gap-1 mt-2"><i class="fab fa-google"></i> View in Google Calendar</a>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Create popup HTML
+            const popupHTML = `
+                <div class="day-popup-overlay" onclick="closeDayPopup()"></div>
+                <div class="day-popup" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                    <div class="p-5 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">${dateStr}</h3>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    ${assessments.length} assessment${assessments.length !== 1 ? 's' : ''} · 
+                                    ${events.length} event${events.length !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                            <button onclick="closeDayPopup()" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                        ${assessments.length > 0 ? `
+                            <div>
+                                <h4 class="text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                                    <i class="fas fa-clipboard-list"></i> Assessments
+                                </h4>
+                                <div class="space-y-3">${assessmentItems}</div>
+                            </div>
+                        ` : ''}
+                        ${events.length > 0 ? `
+                            <div>
+                                <h4 class="text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt"></i> Events
+                                </h4>
+                                <div class="space-y-3">${eventItems}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Remove any existing popup
+            closeDayPopup();
+            
+            // Add popup to body
+            const popupContainer = document.createElement('div');
+            popupContainer.id = 'dayPopupContainer';
+            popupContainer.innerHTML = popupHTML;
+            document.body.appendChild(popupContainer);
+            
+            // Close on escape key
+            document.addEventListener('keydown', handleEscapeKey);
+        }
+        
+        function closeDayPopup() {
+            const container = document.getElementById('dayPopupContainer');
+            if (container) {
+                container.remove();
+            }
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+        
+        function handleEscapeKey(e) {
+            if (e.key === 'Escape') {
+                closeDayPopup();
+            }
+        }
+        
+        function getStatusBadge(status) {
+            const statusConfig = {
+                'not_started': { color: 'bg-gray-100 text-gray-700', text: 'Not Started', icon: 'fa-circle' },
+                'in_progress': { color: 'bg-blue-100 text-blue-700', text: 'In Progress', icon: 'fa-spinner' },
+                'completed': { color: 'bg-green-100 text-green-700', text: 'Completed', icon: 'fa-check-circle' },
+                'submitted': { color: 'bg-orange-100 text-orange-700', text: 'Submitted', icon: 'fa-paper-plane' },
+                'graded': { color: 'bg-purple-100 text-purple-700', text: 'Graded', icon: 'fa-star' },
+            };
+            return statusConfig[status] || statusConfig['not_started'];
+        }
+    </script>
+</body>
+</html>
+

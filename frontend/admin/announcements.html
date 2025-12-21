@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../js/api.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; margin: 0; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #111827 100%); min-height: 100vh; width: 260px; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
+        .sidebar-item { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; color: #e5e7eb; margin-bottom: 0.25rem; text-decoration: none; font-size: 0.95rem; }
+        .sidebar-item i { width: 1.25rem; margin-right: 0.75rem; }
+        .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+        .sidebar-item.active { background: rgba(59,130,246,0.25); color: #fff; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .main-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar text-white p-6">
+        <div class="flex items-center mb-8">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i class="fas fa-shield-alt text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold">Admin Panel</h1>
+                <p class="text-[11px] text-blue-200">Student Tracker</p>
+            </div>
+        </div>
+        <nav>
+            <a href="dashboard.html" class="sidebar-item"><i class="fas fa-home"></i>Dashboard</a>
+            <a href="admins.html" class="sidebar-item"><i class="fas fa-user-shield"></i>Admins / Staff</a>
+            <a href="students.html" class="sidebar-item"><i class="fas fa-user-graduate"></i>Students</a>
+            <a href="announcements.html" class="sidebar-item active"><i class="fas fa-bullhorn"></i>Announcements</a>
+            <a href="notifications.html" class="sidebar-item"><i class="fas fa-bell"></i>Notifications</a>
+            <a href="audit-logs.html" class="sidebar-item"><i class="fas fa-list"></i>Audit Logs</a>
+        </nav>
+        <div class="pt-6 mt-6 border-t border-blue-900/60">
+            <button class="sidebar-item text-red-300 hover:text-red-200" onclick="window.location.href='login.html'">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Exit Admin</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="bg-white shadow-sm px-8 py-5 flex items-center justify-between sticky top-0 z-10">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Announcements</h2>
+                <p class="text-sm text-gray-500">Post news and updates to students</p>
+            </div>
+            <div class="flex gap-3">
+                <button class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50" onclick="exportToXML('announcements')">
+                    <i class="fas fa-file-export mr-2"></i>Export XML Report
+                </button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700" onclick="openAddAnnouncementModal()">
+                    <i class="fas fa-plus mr-2"></i>New Announcement
+                </button>
+            </div>
+        </header>
+
+        <section class="p-8 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="relative max-w-xs w-full">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input id="searchInput" class="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search announcements">
+                </div>
+                <div class="flex gap-2 text-sm">
+                    <select id="audienceFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All audiences</option>
+                        <option value="all">All students</option>
+                        <option value="students">Students</option>
+                        <option value="single">Single user</option>
+                    </select>
+                    <select id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All statuses</option>
+                        <option value="draft">Draft</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="sent">Sent</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Title</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Audience</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Scheduled / Sent</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Created By</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-600">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="announcementsTableBody">
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">
+                                Loading announcements...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- View Announcement Modal -->
+    <div id="viewAnnouncementModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-800">Announcement Details</h3>
+                <button onclick="closeViewAnnouncementModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="viewAnnouncementContent" class="p-6">
+                <p class="text-gray-500">Loading announcement details...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Announcement Modal -->
+    <div id="editAnnouncementModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-800">Edit Announcement</h3>
+                <button onclick="closeEditAnnouncementModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="editAnnouncementForm" class="p-6 space-y-4">
+                <input type="hidden" id="editAnnouncementId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <input type="text" id="editAnnouncementTitle" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="editAnnouncementMessage" required rows="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Audience</label>
+                    <select id="editAnnouncementAudience" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Students</option>
+                        <option value="students">Students</option>
+                        <option value="single">Single User</option>
+                    </select>
+                </div>
+                <div id="editTargetUserIdContainer" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Target User ID</label>
+                    <input type="number" id="editAnnouncementTargetUserId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter user ID">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Schedule (Optional)</label>
+                    <input type="datetime-local" id="editAnnouncementScheduledAt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Leave empty to send immediately</p>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition">
+                        Update Announcement
+                    </button>
+                    <button type="button" onclick="closeEditAnnouncementModal()" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Announcement Modal -->
+    <div id="addAnnouncementModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-gray-800">Create New Announcement</h3>
+                <button onclick="closeAddAnnouncementModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="addAnnouncementForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <input type="text" id="addAnnouncementTitle" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea id="addAnnouncementMessage" required rows="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Audience</label>
+                    <select id="addAnnouncementAudience" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Students</option>
+                        <option value="students">Students</option>
+                        <option value="single">Single User</option>
+                    </select>
+                </div>
+                <div id="targetUserIdContainer" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Target User ID</label>
+                    <input type="number" id="addAnnouncementTargetUserId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter user ID">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Schedule (Optional)</label>
+                    <input type="datetime-local" id="addAnnouncementScheduledAt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Leave empty to send immediately</p>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition">
+                        Create Announcement
+                    </button>
+                    <button type="button" onclick="closeAddAnnouncementModal()" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let announcementsList = [];
+        let editingAnnouncementId = null;
+        function formatDateTime(value) {
+            if (!value) return '-';
+            try {
+                const d = new Date(value);
+                if (isNaN(d.getTime())) return value;
+                return d.toLocaleString();
+            } catch {
+                return value;
+            }
+        }
+
+        function renderAnnouncements(items) {
+            announcementsList = items; // Store for export
+            const tbody = document.getElementById('announcementsTableBody');
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">No announcements found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(a => {
+                const status = a.status || (a.sent_at ? 'sent' : a.scheduled_at ? 'scheduled' : 'draft');
+                const audience = a.audience || 'all';
+                const statusClasses =
+                    status === 'sent' ? 'bg-green-100 text-green-700' :
+                    status === 'scheduled' ? 'bg-amber-100 text-amber-700' :
+                    'bg-gray-100 text-gray-700';
+
+                const scheduledOrSent = a.sent_at || a.scheduled_at || '-';
+
+                return `
+                    <tr class="border-b last:border-0">
+                        <td class="px-4 py-3 font-medium text-gray-800">${a.title || '-'}</td>
+                        <td class="px-4 py-3 text-gray-600">${audience}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-full text-xs ${statusClasses}">${status}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500">${formatDateTime(scheduledOrSent)}</td>
+                        <td class="px-4 py-3 text-gray-600">${(a.admin && a.admin.name) || a.admin_name || '-'}</td>
+                        <td class="px-4 py-3 text-right space-x-2">
+                            <button onclick="viewAnnouncement(${a.id})" class="text-blue-600 hover:text-blue-800" title="View"><i class="fas fa-eye"></i></button>
+                            ${status === 'sent' ? '' : `<button onclick="editAnnouncement(${a.id})" class="text-blue-600 hover:text-blue-800" title="Edit"><i class="fas fa-pen"></i></button>`}
+                            <button onclick="deleteAnnouncement(${a.id}, '${(a.title || '').replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-800" title="Delete"><i class="fas fa-trash"></i></button>
+                            ${status === 'draft' || status === 'scheduled' ? `<button onclick="sendAnnouncement(${a.id})" class="text-green-600 hover:text-green-800" title="Send Now"><i class="fas fa-paper-plane"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function ensureAdminAccessAnnouncementsPage() {
+            const token = window.api.getToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            try {
+                const response = await window.api.getCurrentUser();
+                let user = response;
+                if (response.data && response.data.user) {
+                    user = response.data.user;
+                } else if (response.data) {
+                    user = response.data;
+                } else if (response.user) {
+                    user = response.user;
+                }
+                // Allow both admin and super_admin roles
+                if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+                    window.api.removeToken();
+                    window.location.href = 'login.html';
+                    return null;
+                }
+                return user;
+            } catch (error) {
+                console.error('Admin auth check failed:', error);
+                window.api.removeToken();
+                window.location.href = 'login.html';
+                return null;
+            }
+        }
+
+        async function loadAnnouncements() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const audienceFilter = document.getElementById('audienceFilter').value;
+            try {
+                const response = await window.api.getAdminAnnouncements({
+                    status: statusFilter || undefined,
+                    audience: audienceFilter || undefined,
+                });
+                // Handle paginated structure: { success, data: { data: [...] } }
+                let items = response;
+                if (items.data && Array.isArray(items.data)) {
+                    items = items.data;
+                } else if (items.data && items.data.data && Array.isArray(items.data.data)) {
+                    items = items.data.data;
+                } else if (Array.isArray(items.data)) {
+                    items = items.data;
+                } else if (Array.isArray(items.announcements)) {
+                    items = items.announcements;
+                } else if (!Array.isArray(items)) {
+                    items = [];
+                }
+                renderAnnouncements(items);
+            } catch (error) {
+                console.error('Failed to load announcements:', error);
+                const tbody = document.getElementById('announcementsTableBody');
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-red-500 text-sm">Failed to load announcements.</td></tr>';
+            }
+        }
+
+        function exportToXML(type) {
+            const data = announcementsList || [];
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<report>
+    <type>${type}</type>
+    <generated>${new Date().toISOString()}</generated>
+    <filters>
+        <audience>${document.getElementById('audienceFilter').value || 'all'}</audience>
+        <status>${document.getElementById('statusFilter').value || 'all'}</status>
+    </filters>
+    <count>${data.length}</count>
+    <items>
+${data.map(item => `        <item>
+            <id>${item.id || ''}</id>
+            <title>${escapeXML(item.title || '')}</title>
+            <message>${escapeXML(item.message || '')}</message>
+            <audience>${escapeXML(item.audience || '')}</audience>
+            <status>${escapeXML(item.status || (item.sent_at ? 'sent' : item.scheduled_at ? 'scheduled' : 'draft'))}</status>
+            <scheduled_at>${escapeXML(item.scheduled_at || '')}</scheduled_at>
+            <sent_at>${escapeXML(item.sent_at || '')}</sent_at>
+            <created_by>${escapeXML((item.admin && item.admin.name) || item.admin_name || '')}</created_by>
+            <created_at>${escapeXML(item.created_at || '')}</created_at>
+        </item>`).join('\n')}
+    </items>
+</report>`;
+            downloadXML(xml, `announcements-report-${new Date().toISOString().split('T')[0]}.xml`);
+        }
+
+        function escapeXML(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+        }
+
+        function downloadXML(xml, filename) {
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function openAddAnnouncementModal() {
+            document.getElementById('addAnnouncementModal').classList.remove('hidden');
+        }
+
+        function closeAddAnnouncementModal() {
+            document.getElementById('addAnnouncementModal').classList.add('hidden');
+            document.getElementById('addAnnouncementForm').reset();
+            document.getElementById('targetUserIdContainer').classList.add('hidden');
+        }
+
+        function viewAnnouncement(id) {
+            const announcement = announcementsList.find(a => a.id === id);
+            if (!announcement) {
+                alert('Announcement not found');
+                return;
+            }
+
+            const status = announcement.status || (announcement.sent_at ? 'sent' : announcement.scheduled_at ? 'scheduled' : 'draft');
+            const content = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Title</label>
+                        <p class="text-gray-800 font-medium text-lg mt-1">${announcement.title || '-'}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Message</label>
+                        <p class="text-gray-800 mt-1 whitespace-pre-wrap">${announcement.message || '-'}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Audience</label>
+                            <p class="text-gray-800 mt-1">${announcement.audience || 'all'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Status</label>
+                            <span class="px-2 py-1 rounded-full text-xs ${status === 'sent' ? 'bg-green-100 text-green-700' : status === 'scheduled' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'} mt-1 inline-block">${status}</span>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Created By</label>
+                            <p class="text-gray-800 mt-1">${(announcement.admin && announcement.admin.name) || announcement.admin_name || '-'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Created At</label>
+                            <p class="text-gray-800 mt-1">${formatDateTime(announcement.created_at)}</p>
+                        </div>
+                        ${announcement.scheduled_at ? `<div><label class="text-sm font-medium text-gray-500">Scheduled At</label><p class="text-gray-800 mt-1">${formatDateTime(announcement.scheduled_at)}</p></div>` : ''}
+                        ${announcement.sent_at ? `<div><label class="text-sm font-medium text-gray-500">Sent At</label><p class="text-gray-800 mt-1">${formatDateTime(announcement.sent_at)}</p></div>` : ''}
+                    </div>
+                </div>
+            `;
+            document.getElementById('viewAnnouncementContent').innerHTML = content;
+            document.getElementById('viewAnnouncementModal').classList.remove('hidden');
+        }
+
+        function closeViewAnnouncementModal() {
+            document.getElementById('viewAnnouncementModal').classList.add('hidden');
+        }
+
+        function editAnnouncement(id) {
+            const announcement = announcementsList.find(a => a.id === id);
+            if (!announcement) {
+                alert('Announcement not found');
+                return;
+            }
+
+            const status = announcement.status || (announcement.sent_at ? 'sent' : announcement.scheduled_at ? 'scheduled' : 'draft');
+            if (status === 'sent') {
+                alert('Cannot edit sent announcements');
+                return;
+            }
+
+            editingAnnouncementId = id;
+            document.getElementById('editAnnouncementId').value = id;
+            document.getElementById('editAnnouncementTitle').value = announcement.title || '';
+            document.getElementById('editAnnouncementMessage').value = announcement.message || '';
+            document.getElementById('editAnnouncementAudience').value = announcement.audience || 'all';
+            
+            if (announcement.audience === 'single' && announcement.target_user_id) {
+                document.getElementById('editAnnouncementTargetUserId').value = announcement.target_user_id;
+                document.getElementById('editTargetUserIdContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('editTargetUserIdContainer').classList.add('hidden');
+            }
+
+            if (announcement.scheduled_at) {
+                // Convert scheduled_at to datetime-local format
+                const scheduledDate = new Date(announcement.scheduled_at);
+                const localDateTime = new Date(scheduledDate.getTime() - scheduledDate.getTimezoneOffset() * 60000)
+                    .toISOString()
+                    .slice(0, 16);
+                document.getElementById('editAnnouncementScheduledAt').value = localDateTime;
+            } else {
+                document.getElementById('editAnnouncementScheduledAt').value = '';
+            }
+
+            document.getElementById('editAnnouncementModal').classList.remove('hidden');
+        }
+
+        function closeEditAnnouncementModal() {
+            document.getElementById('editAnnouncementModal').classList.add('hidden');
+            document.getElementById('editAnnouncementForm').reset();
+            document.getElementById('editTargetUserIdContainer').classList.add('hidden');
+            editingAnnouncementId = null;
+        }
+
+        async function deleteAnnouncement(id, title) {
+            if (!confirm(`Are you sure you want to delete announcement "${title}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                await window.api.deleteAnnouncement(id);
+                await loadAnnouncements();
+                alert('Announcement deleted successfully.');
+            } catch (error) {
+                console.error('Failed to delete announcement:', error);
+                const errorMsg = error.message || error.data?.message || 'Failed to delete announcement. Please try again.';
+                alert(errorMsg);
+            }
+        }
+
+        async function sendAnnouncement(id) {
+            const announcement = announcementsList.find(a => a.id === id);
+            if (!announcement) {
+                alert('Announcement not found');
+                return;
+            }
+
+            if (!confirm(`Send announcement "${announcement.title}" now?`)) {
+                return;
+            }
+
+            try {
+                await window.api.sendAnnouncement(id);
+                await loadAnnouncements();
+                alert('Announcement sent successfully.');
+            } catch (error) {
+                console.error('Failed to send announcement:', error);
+                const errorMsg = error.message || error.data?.message || 'Failed to send announcement. Please try again.';
+                alert(errorMsg);
+            }
+        }
+
+        document.getElementById('addAnnouncementAudience').addEventListener('change', (e) => {
+            if (e.target.value === 'single') {
+                document.getElementById('targetUserIdContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('targetUserIdContainer').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('editAnnouncementAudience').addEventListener('change', (e) => {
+            if (e.target.value === 'single') {
+                document.getElementById('editTargetUserIdContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('editTargetUserIdContainer').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('editAnnouncementForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = editingAnnouncementId;
+            const audience = document.getElementById('editAnnouncementAudience').value;
+            const data = {
+                title: document.getElementById('editAnnouncementTitle').value,
+                message: document.getElementById('editAnnouncementMessage').value,
+                audience: audience,
+            };
+
+            // Only include target_user_id if audience is 'single'
+            if (audience === 'single') {
+                const targetUserId = document.getElementById('editAnnouncementTargetUserId').value;
+                if (targetUserId) {
+                    data.target_user_id = parseInt(targetUserId);
+                }
+            }
+
+            // Only include scheduled_at if it has a value
+            const scheduledAt = document.getElementById('editAnnouncementScheduledAt').value;
+            if (scheduledAt) {
+                data.scheduled_at = scheduledAt;
+            }
+
+            try {
+                await window.api.updateAnnouncement(id, data);
+                closeEditAnnouncementModal();
+                await loadAnnouncements();
+                alert('Announcement updated successfully!');
+            } catch (error) {
+                console.error('Failed to update announcement:', error);
+                let errorMsg = error.message || 'Failed to update announcement. Please try again.';
+                if (error.data && error.data.errors) {
+                    const validationErrors = Object.entries(error.data.errors)
+                        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+                        .join('\n');
+                    errorMsg = `Validation errors:\n${validationErrors}`;
+                } else if (error.data && error.data.message) {
+                    errorMsg = error.data.message;
+                }
+                alert(errorMsg);
+            }
+        });
+
+        document.getElementById('viewAnnouncementModal').addEventListener('click', (e) => {
+            if (e.target.id === 'viewAnnouncementModal') {
+                closeViewAnnouncementModal();
+            }
+        });
+
+        document.getElementById('editAnnouncementModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editAnnouncementModal') {
+                closeEditAnnouncementModal();
+            }
+        });
+
+        document.getElementById('addAnnouncementForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const audience = document.getElementById('addAnnouncementAudience').value;
+            const data = {
+                title: document.getElementById('addAnnouncementTitle').value,
+                message: document.getElementById('addAnnouncementMessage').value,
+                audience: audience,
+            };
+
+            // Only include target_user_id if audience is 'single'
+            if (audience === 'single') {
+                const targetUserId = document.getElementById('addAnnouncementTargetUserId').value;
+                if (targetUserId) {
+                    data.target_user_id = parseInt(targetUserId);
+                }
+            }
+
+            // Only include scheduled_at if it has a value
+            const scheduledAt = document.getElementById('addAnnouncementScheduledAt').value;
+            if (scheduledAt) {
+                data.scheduled_at = scheduledAt;
+            }
+
+            try {
+                await window.api.createAnnouncement(data);
+                closeAddAnnouncementModal();
+                await loadAnnouncements();
+                alert('Announcement created successfully!');
+            } catch (error) {
+                console.error('Failed to create announcement:', error);
+                let errorMsg = error.message || 'Failed to create announcement. Please try again.';
+                if (error.data && error.data.errors) {
+                    const validationErrors = Object.entries(error.data.errors)
+                        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+                        .join('\n');
+                    errorMsg = `Validation errors:\n${validationErrors}`;
+                } else if (error.data && error.data.message) {
+                    errorMsg = error.data.message;
+                }
+                alert(errorMsg);
+            }
+        });
+
+        document.getElementById('addAnnouncementModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addAnnouncementModal') {
+                closeAddAnnouncementModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await ensureAdminAccessAnnouncementsPage();
+            if (!user) return;
+
+            await loadAnnouncements();
+
+            document.getElementById('statusFilter').addEventListener('change', loadAnnouncements);
+            document.getElementById('audienceFilter').addEventListener('change', loadAnnouncements);
+            
+            // Add search functionality
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filtered = announcementsList.filter(announcement => 
+                    (announcement.title || '').toLowerCase().includes(searchTerm) ||
+                    (announcement.message || '').toLowerCase().includes(searchTerm)
+                );
+                renderAnnouncements(filtered);
+            });
+        });
+
+        window.openAddAnnouncementModal = openAddAnnouncementModal;
+        window.closeAddAnnouncementModal = closeAddAnnouncementModal;
+        window.viewAnnouncement = viewAnnouncement;
+        window.closeViewAnnouncementModal = closeViewAnnouncementModal;
+        window.editAnnouncement = editAnnouncement;
+        window.closeEditAnnouncementModal = closeEditAnnouncementModal;
+        window.deleteAnnouncement = deleteAnnouncement;
+        window.sendAnnouncement = sendAnnouncement;
+        window.exportToXML = exportToXML;
+    </script>
+</body>
+</html>

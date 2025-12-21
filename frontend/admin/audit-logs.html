@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../js/api.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; margin: 0; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #111827 100%); min-height: 100vh; width: 260px; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
+        .sidebar-item { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; color: #e5e7eb; margin-bottom: 0.25rem; text-decoration: none; font-size: 0.95rem; }
+        .sidebar-item i { width: 1.25rem; margin-right: 0.75rem; }
+        .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+        .sidebar-item.active { background: rgba(59,130,246,0.25); color: #fff; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .main-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar text-white p-6">
+        <div class="flex items-center mb-8">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i class="fas fa-shield-alt text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold">Admin Panel</h1>
+                <p class="text-[11px] text-blue-200">Student Tracker</p>
+            </div>
+        </div>
+        <nav>
+            <a href="dashboard.html" class="sidebar-item"><i class="fas fa-home"></i>Dashboard</a>
+            <a href="admins.html" class="sidebar-item"><i class="fas fa-user-shield"></i>Admins / Staff</a>
+            <a href="students.html" class="sidebar-item"><i class="fas fa-user-graduate"></i>Students</a>
+            <a href="announcements.html" class="sidebar-item"><i class="fas fa-bullhorn"></i>Announcements</a>
+            <a href="notifications.html" class="sidebar-item"><i class="fas fa-bell"></i>Notifications</a>
+            <a href="audit-logs.html" class="sidebar-item active"><i class="fas fa-list"></i>Audit Logs</a>
+        </nav>
+        <div class="pt-6 mt-6 border-t border-blue-900/60">
+            <button class="sidebar-item text-red-300 hover:text-red-200" onclick="window.location.href='login.html'">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Exit Admin</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="bg-white shadow-sm px-8 py-5 flex items-center justify-between sticky top-0 z-10">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Audit Logs</h2>
+                <p class="text-sm text-gray-500">Track admin actions (who changed what, when)</p>
+            </div>
+            <div class="flex gap-3">
+                <button class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50" onclick="exportToXML('audit-logs')">
+                    <i class="fas fa-file-export mr-2"></i>Export XML Report
+                </button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700" onclick="loadLogs()">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+        </header>
+
+        <section class="p-8 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="relative max-w-xs w-full">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input id="searchInput" class="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search by admin, entity, action">
+                </div>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    <select id="adminFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All admins</option>
+                    </select>
+                    <select id="entityFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All entities</option>
+                        <option value="User">User</option>
+                        <option value="Student">Student</option>
+                        <option value="Announcement">Announcement</option>
+                    </select>
+                    <select id="actionFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All actions</option>
+                        <option value="create">Create</option>
+                        <option value="update">Update</option>
+                        <option value="delete">Delete</option>
+                        <option value="login">Login</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Timestamp</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Admin</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Action</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Entity</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">Details</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-600">IP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">
+                                Loading logs...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let logsList = [];
+
+        function formatDateTime(value) {
+            if (!value) return '-';
+            try {
+                const d = new Date(value);
+                if (isNaN(d.getTime())) return value;
+                return d.toLocaleString();
+            } catch {
+                return value;
+            }
+        }
+
+        function renderLogs(logs) {
+            logsList = logs; // Store for export
+            const tbody = document.getElementById('logsTableBody');
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">No logs found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = logs.map(log => {
+                const action = log.action || log.type || 'info';
+                const actionColor =
+                    action === 'create' ? 'bg-green-100 text-green-700' :
+                    action === 'update' ? 'bg-blue-100 text-blue-700' :
+                    action === 'delete' ? 'bg-red-100 text-red-700' :
+                    'bg-gray-100 text-gray-700';
+
+                const entity = log.entity || log.entity_type || '-';
+                const ip = log.ip_address || log.ip || '-';
+                const adminName = (log.admin && log.admin.name) || log.admin_name || '-';
+                const details = log.message || log.title || '-';
+
+                return `
+                    <tr class="border-b last:border-0">
+                        <td class="px-4 py-3 text-gray-500">${formatDateTime(log.created_at)}</td>
+                        <td class="px-4 py-3 font-medium text-gray-800">${adminName}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-full text-xs ${actionColor}">${action}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">${entity}</td>
+                        <td class="px-4 py-3 text-gray-600">${details}</td>
+                        <td class="px-4 py-3 text-gray-500">${ip}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function ensureAdminAccessLogsPage() {
+            const token = window.api.getToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            try {
+                const response = await window.api.getCurrentUser();
+                let user = response;
+                if (response.data && response.data.user) {
+                    user = response.data.user;
+                } else if (response.data) {
+                    user = response.data;
+                } else if (response.user) {
+                    user = response.user;
+                }
+                // Allow both admin and super_admin roles
+                if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+                    window.api.removeToken();
+                    window.location.href = 'login.html';
+                    return null;
+                }
+                return user;
+            } catch (error) {
+                console.error('Admin auth check failed:', error);
+                window.api.removeToken();
+                window.location.href = 'login.html';
+                return null;
+            }
+        }
+
+        async function loadAdminFilter() {
+            try {
+                // Fetch all admin roles (admin and super_admin) for the filter
+                const response = await window.api.getAdminUsers({});
+                let admins = response;
+                if (admins.data && Array.isArray(admins.data)) {
+                    admins = admins.data;
+                } else if (admins.data && admins.data.data && Array.isArray(admins.data.data)) {
+                    admins = admins.data.data;
+                } else if (Array.isArray(admins.users)) {
+                    admins = admins.users;
+                } else if (!Array.isArray(admins)) {
+                    admins = [];
+                }
+                // Filter to only admin roles (admin and super_admin)
+                admins = admins.filter(a => a.role === 'admin' || a.role === 'super_admin');
+                const adminFilter = document.getElementById('adminFilter');
+                admins.forEach(admin => {
+                    const option = document.createElement('option');
+                    option.value = admin.id;
+                    option.textContent = `${admin.name || admin.email}${admin.role === 'super_admin' ? ' (Super Admin)' : ''}`;
+                    adminFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to load admins for filter:', error);
+            }
+        }
+
+        async function loadLogs() {
+            const actionFilter = document.getElementById('actionFilter').value;
+            const entityFilter = document.getElementById('entityFilter').value;
+            const adminFilter = document.getElementById('adminFilter').value;
+            // Show loading state
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">Loading logs...</td></tr>';
+            
+            try {
+                // Try fetching with a high per_page limit first
+                let response = await window.api.getAdminLogs({ per_page: 100 });
+                
+                let allLogs = [];
+                let totalCount = 0;
+                
+                // Parse response - we know it's response.data.data from the debug output
+                if (response && response.success && response.data) {
+                    if (Array.isArray(response.data.data)) {
+                        allLogs = response.data.data;
+                    } else if (Array.isArray(response.data)) {
+                        allLogs = response.data;
+                    }
+                    
+                    // Get total count from pagination info
+                    if (response.data.total !== undefined) {
+                        totalCount = response.data.total;
+                    } else {
+                        totalCount = allLogs.length;
+                    }
+                    
+                    // If paginated and we got less than total, fetch remaining pages
+                    if (response.data.last_page && response.data.last_page > 1 && totalCount > allLogs.length) {
+                        const totalPages = response.data.last_page;
+                        for (let page = 2; page <= totalPages && page <= 10; page++) {
+                            const pageResponse = await window.api.getAdminLogs({ page: page, per_page: 100 });
+                            if (pageResponse && pageResponse.success && pageResponse.data) {
+                                if (Array.isArray(pageResponse.data.data)) {
+                                    allLogs = allLogs.concat(pageResponse.data.data);
+                                } else if (Array.isArray(pageResponse.data)) {
+                                    allLogs = allLogs.concat(pageResponse.data);
+                                }
+                            }
+                        }
+                    }
+                } else if (Array.isArray(response)) {
+                    allLogs = response;
+                    totalCount = response.length;
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    allLogs = response.data;
+                    totalCount = response.data.length;
+                }
+                
+                // Apply frontend filtering
+                let filteredLogs = allLogs;
+                if (actionFilter) {
+                    filteredLogs = filteredLogs.filter(l => {
+                        const action = (l.action || l.type || '').toLowerCase();
+                        return action === actionFilter.toLowerCase();
+                    });
+                }
+                if (entityFilter) {
+                    filteredLogs = filteredLogs.filter(l => {
+                        const entity = (l.entity_type || l.entity || '').toLowerCase();
+                        return entity === entityFilter.toLowerCase();
+                    });
+                }
+                if (adminFilter) {
+                    filteredLogs = filteredLogs.filter(l => {
+                        const adminId = (l.admin && l.admin.id) || l.admin_id;
+                        return adminId && adminId.toString() === adminFilter;
+                    });
+                }
+                
+                // Show helpful message if no logs
+                if (allLogs.length === 0 && totalCount === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">
+                                <div class="space-y-2">
+                                    <p class="font-medium">No logs found in the system.</p>
+                                    <p class="text-xs text-gray-400">Logs are automatically created when admins perform actions such as:</p>
+                                    <ul class="text-xs text-gray-400 list-disc list-inside space-y-1">
+                                        <li>Creating, updating, or deleting users</li>
+                                        <li>Changing user roles or status</li>
+                                        <li>Creating or sending announcements</li>
+                                        <li>Other administrative actions</li>
+                                    </ul>
+                                    <p class="text-xs text-gray-400 mt-2">Perform an action and then click the Refresh button to see new logs.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    logsList = []; // Set empty for export
+                    return;
+                }
+                
+                renderLogs(filteredLogs);
+            } catch (error) {
+                console.error('Failed to load logs:', error);
+                console.error('Error status:', error.status);
+                console.error('Error data:', error.data);
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-red-500 text-sm">Failed to load logs: ${error.message || 'Unknown error'}</td></tr>`;
+            }
+        }
+
+        function exportToXML(type) {
+            const data = logsList || [];
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<report>
+    <type>${type}</type>
+    <generated>${new Date().toISOString()}</generated>
+    <filters>
+        <admin>${document.getElementById('adminFilter').value || 'all'}</admin>
+        <entity>${document.getElementById('entityFilter').value || 'all'}</entity>
+        <action>${document.getElementById('actionFilter').value || 'all'}</action>
+    </filters>
+    <count>${data.length}</count>
+    <items>
+${data.map(item => `        <item>
+            <id>${item.id || ''}</id>
+            <timestamp>${escapeXML(item.created_at || '')}</timestamp>
+            <admin>${escapeXML((item.admin && item.admin.name) || item.admin_name || '')}</admin>
+            <action>${escapeXML(item.action || item.type || '')}</action>
+            <entity>${escapeXML(item.entity || item.entity_type || '')}</entity>
+            <details>${escapeXML(item.message || item.title || '')}</details>
+            <ip_address>${escapeXML(item.ip_address || item.ip || '')}</ip_address>
+            <level>${escapeXML(item.level || '')}</level>
+        </item>`).join('\n')}
+    </items>
+</report>`;
+            downloadXML(xml, `audit-logs-report-${new Date().toISOString().split('T')[0]}.xml`);
+        }
+
+        function escapeXML(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+        }
+
+        function downloadXML(xml, filename) {
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await ensureAdminAccessLogsPage();
+            if (!user) return;
+
+            await loadAdminFilter();
+            await loadLogs();
+
+            document.getElementById('actionFilter').addEventListener('change', loadLogs);
+            document.getElementById('entityFilter').addEventListener('change', loadLogs);
+            document.getElementById('adminFilter').addEventListener('change', loadLogs);
+            
+            // Add search functionality
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filtered = logsList.filter(log => 
+                    ((log.admin && log.admin.name) || log.admin_name || '').toLowerCase().includes(searchTerm) ||
+                    (log.entity || log.entity_type || '').toLowerCase().includes(searchTerm) ||
+                    (log.action || log.type || '').toLowerCase().includes(searchTerm) ||
+                    (log.message || log.title || '').toLowerCase().includes(searchTerm)
+                );
+                renderLogs(filtered);
+            });
+        });
+
+        window.exportToXML = exportToXML;
+    </script>
+</body>
+</html>

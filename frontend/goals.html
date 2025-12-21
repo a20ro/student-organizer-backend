@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goals - Student Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: #f8fafc;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 3px solid #60a5fa;
+        }
+        
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+        
+        .goal-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .goal-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateX(4px);
+        }
+        
+        .goal-card.completed {
+            border-left-color: #10b981;
+            opacity: 0.7;
+        }
+        
+        .goal-card.in-progress {
+            border-left-color: #3b82f6;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar text-white p-6">
+        <!-- Logo -->
+        <div class="flex items-center mb-10">
+            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i class="fas fa-graduation-cap text-2xl text-blue-600"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold">Student Tracker</h1>
+                <p class="text-xs text-blue-200">Organize & Succeed</p>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="space-y-1">
+            <a href="index.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-home w-5 mr-3"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            <a href="semesters.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-calendar-alt w-5 mr-3"></i>
+                <span class="font-medium">Semesters</span>
+            </a>
+            <a href="courses.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-book w-5 mr-3"></i>
+                <span class="font-medium">Courses</span>
+            </a>
+            <a href="assessments.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-clipboard-list w-5 mr-3"></i>
+                <span class="font-medium">Assessments</span>
+            </a>
+            <a href="notes.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-sticky-note w-5 mr-3"></i>
+                <span class="font-medium">Notes</span>
+            </a>
+            <a href="events.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-calendar w-5 mr-3"></i>
+                <span class="font-medium">Events</span>
+            </a>
+            <a href="budget.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-wallet w-5 mr-3"></i>
+                <span class="font-medium">Budget</span>
+            </a>
+            <a href="goals.html" class="sidebar-item active flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-bullseye w-5 mr-3"></i>
+                <span class="font-medium">Goals</span>
+            </a>
+            <a href="tasks.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-tasks w-5 mr-3"></i>
+                <span class="font-medium">Tasks</span>
+            </a>
+            <a href="habits.html" class="sidebar-item flex items-center px-4 py-3 rounded-lg">
+                <i class="fas fa-chart-line w-5 mr-3"></i>
+                <span class="font-medium">Habits</span>
+            </a>
+            <div class="pt-6 mt-6 border-t border-blue-400 border-opacity-30">
+                <a href="#" id="logoutButton" class="sidebar-item flex items-center px-4 py-3 rounded-lg text-red-200 hover:text-red-100 hover:bg-red-500 hover:bg-opacity-20">
+                    <i class="fas fa-sign-out-alt w-5 mr-3"></i>
+                    <span class="font-medium">Logout</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="bg-white shadow-sm px-8 py-5 flex items-center justify-between sticky top-0 z-50">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Goals</h1>
+                <p class="text-sm text-gray-500 mt-1">Track your personal goals</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <select id="statusFilter" class="pl-11 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 appearance-none cursor-pointer hover:border-gray-400 transition-colors font-medium min-w-[150px]">
+                        <option value="">All Goals</option>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+                <button id="addGoalBtn" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    <span>New Goal</span>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Content -->
+        <div class="p-8">
+            <!-- Goals List -->
+            <div id="goalsList" class="space-y-4">
+                <!-- Goals will be loaded here -->
+            </div>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-12 hidden">
+                <i class="fas fa-bullseye text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No goals found</p>
+                <p class="text-sm text-gray-400 mt-2">Create your first goal to get started</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Goal Modal -->
+    <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 id="modalTitle" class="text-xl font-semibold text-gray-800">Add Goal</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="goalForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <input type="text" id="goalTitle" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter goal title">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="goalDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter goal description"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Target Date</label>
+                    <input type="date" id="goalTargetDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="flex gap-3 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition">
+                        <span id="submitBtnText">Add Goal</span>
+                    </button>
+                    <button type="button" id="cancelBtn" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        let goals = [];
+        let editingGoalId = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!window.auth.isAuthenticated()) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            await loadGoals();
+            
+            document.getElementById('addGoalBtn').addEventListener('click', () => openModal());
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('cancelBtn').addEventListener('click', closeModal);
+            document.getElementById('goalForm').addEventListener('submit', handleSubmit);
+            document.getElementById('statusFilter').addEventListener('change', loadGoals);
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
+            
+            document.getElementById('goalModal').addEventListener('click', (e) => {
+                if (e.target.id === 'goalModal') {
+                    closeModal();
+                }
+            });
+        });
+        
+        async function loadGoals() {
+            try {
+                const response = await window.api.getGoals();
+                if (response.success) {
+                    goals = response.data || [];
+                    
+                    const statusFilter = document.getElementById('statusFilter').value;
+                    let filteredGoals = goals;
+                    
+                    if (statusFilter === 'active') {
+                        filteredGoals = goals.filter(g => !g.completed);
+                    } else if (statusFilter === 'completed') {
+                        filteredGoals = goals.filter(g => g.completed);
+                    }
+                    
+                    displayGoals(filteredGoals);
+                }
+            } catch (error) {
+                console.error('Error loading goals:', error);
+            }
+        }
+        
+        function displayGoals(goalsList) {
+            const container = document.getElementById('goalsList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (goalsList.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            container.innerHTML = goalsList.map(goal => {
+                const isCompleted = goal.completed;
+                const targetDate = goal.target_date ? new Date(goal.target_date) : null;
+                const isOverdue = targetDate && !isCompleted && targetDate < new Date();
+                
+                return `
+                    <div class="goal-card ${isCompleted ? 'completed' : 'in-progress'} bg-white rounded-xl p-6 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <input type="checkbox" ${isCompleted ? 'checked' : ''} onchange="toggleComplete(${goal.id})" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                                    <h3 class="text-xl font-semibold text-gray-800 ${isCompleted ? 'line-through text-gray-500' : ''}">${escapeHtml(goal.title)}</h3>
+                                </div>
+                                ${goal.description ? `<p class="text-gray-600 mb-3 ml-8">${escapeHtml(goal.description)}</p>` : ''}
+                                <div class="flex items-center gap-4 ml-8 text-sm text-gray-500">
+                                    ${targetDate ? `
+                                        <span class="flex items-center gap-1 ${isOverdue ? 'text-red-600' : ''}">
+                                            <i class="fas fa-calendar"></i>
+                                            Target: ${formatDate(targetDate)}
+                                        </span>
+                                    ` : ''}
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-clock"></i>
+                                        Created: ${formatDate(new Date(goal.created_at))}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="editGoal(${goal.id})" class="p-2 text-gray-400 hover:text-blue-600 transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteGoal(${goal.id})" class="p-2 text-gray-400 hover:text-red-600 transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function openModal(goal = null) {
+            editingGoalId = goal ? goal.id : null;
+            const modal = document.getElementById('goalModal');
+            const form = document.getElementById('goalForm');
+            const title = document.getElementById('modalTitle');
+            const submitBtn = document.getElementById('submitBtnText');
+            
+            if (goal) {
+                title.textContent = 'Edit Goal';
+                submitBtn.textContent = 'Update Goal';
+                document.getElementById('goalTitle').value = goal.title || '';
+                document.getElementById('goalDescription').value = goal.description || '';
+                if (goal.target_date) {
+                    const date = new Date(goal.target_date);
+                    document.getElementById('goalTargetDate').value = date.toISOString().split('T')[0];
+                } else {
+                    document.getElementById('goalTargetDate').value = '';
+                }
+            } else {
+                title.textContent = 'Add Goal';
+                submitBtn.textContent = 'Add Goal';
+                form.reset();
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function closeModal() {
+            document.getElementById('goalModal').classList.add('hidden');
+            editingGoalId = null;
+            document.getElementById('goalForm').reset();
+        }
+        
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const data = {
+                title: document.getElementById('goalTitle').value,
+                description: document.getElementById('goalDescription').value || null,
+                target_date: document.getElementById('goalTargetDate').value || null
+            };
+            
+            try {
+                if (editingGoalId) {
+                    await window.api.updateGoal(editingGoalId, data);
+                } else {
+                    await window.api.createGoal(data);
+                }
+                
+                closeModal();
+                await loadGoals();
+            } catch (error) {
+                console.error('Error saving goal:', error);
+                alert('Failed to save goal. Please try again.');
+            }
+        }
+        
+        async function toggleComplete(id) {
+            try {
+                const goal = goals.find(g => g.id === id);
+                if (!goal) return;
+                
+                // Toggle completion status
+                const newCompletedStatus = !goal.completed;
+                
+                // Update the goal with new completion status
+                await window.api.updateGoal(id, {
+                    completed: newCompletedStatus
+                });
+                
+                await loadGoals();
+            } catch (error) {
+                console.error('Error toggling goal completion:', error);
+                // If update fails, try the complete endpoint as fallback (only if completing)
+                const goal = goals.find(g => g.id === id);
+                if (goal && !goal.completed) {
+                    try {
+                        await window.api.completeGoal(id);
+                        await loadGoals();
+                    } catch (fallbackError) {
+                        console.error('Error with fallback completion:', fallbackError);
+                        alert('Failed to update goal status. Please try again.');
+                    }
+                } else {
+                    alert('Failed to update goal status. Please try again.');
+                }
+            }
+        }
+        
+        async function editGoal(id) {
+            const goal = goals.find(g => g.id === id);
+            if (goal) {
+                openModal(goal);
+            }
+        }
+        
+        async function deleteGoal(id) {
+            if (!confirm('Are you sure you want to delete this goal?')) {
+                return;
+            }
+            
+            try {
+                await window.api.deleteGoal(id);
+                await loadGoals();
+            } catch (error) {
+                console.error('Error deleting goal:', error);
+                alert('Failed to delete goal. Please try again.');
+            }
+        }
+        
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.api.logout().then(() => {
+                    window.location.href = 'login.html';
+                });
+            }
+        }
+        
+        window.toggleComplete = toggleComplete;
+        window.editGoal = editGoal;
+        window.deleteGoal = deleteGoal;
+    </script>
+</body>
+</html>
+
