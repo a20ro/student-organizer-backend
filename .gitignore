@@ -65,5 +65,7 @@ composer.phar
 # Migration scripts (temporary)
 migrate_to_mysql.php
 import_to_mysql.php
+import_to_mysql_fixed.php
+switch_to_mysql.sh
 MYSQL_MIGRATION_GUIDE.md
 /storage/app/mysql_export/
