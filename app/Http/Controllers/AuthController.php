@@ -194,7 +194,7 @@ class AuthController extends Controller
         ]);
 
         // Send email with reset link
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $frontendUrl = env('FRONTEND_URL');
         $resetUrl = $frontendUrl . '/reset-password.html?token=' . $token . '&email=' . urlencode($request->email);
         
         try {

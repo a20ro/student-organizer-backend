@@ -96,7 +96,7 @@ class GoogleAuthController extends Controller
             ]);
 
             // Get frontend URL from environment
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $frontendUrl = env('FRONTEND_URL');
             
             // Get redirect path from query parameter or default to root
             $redirectPath = $request->get('redirect_to', '/');
@@ -118,7 +118,7 @@ class GoogleAuthController extends Controller
             \Log::error('Google OAuth callback error: ' . $e->getMessage());
             
             // On error, redirect to frontend root with error
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+            $frontendUrl = env('FRONTEND_URL');
             $redirectUrl = rtrim($frontendUrl, '/') . '/?error=' . urlencode('Google authentication failed. Please try again.');
             
             return redirect($redirectUrl);
