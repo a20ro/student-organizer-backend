@@ -54,6 +54,11 @@ return new class extends Migration
             DB::statement('CREATE UNIQUE INDEX users_google_id_unique on users (google_id);');
 
             DB::statement('PRAGMA foreign_keys=ON;');
+        } elseif (config('database.default') === 'pgsql' || DB::getDriverName() === 'pgsql') {
+             // For PostgreSQL, we need to drop the check constraint and re-add it
+             // naming convention is usually table_column_check
+             DB::statement("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
+             DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('student', 'admin', 'super_admin'))");
         } else {
             Schema::table('users', function (Blueprint $table) {
                 $table->enum('role', ['student', 'admin', 'super_admin'])->default('student')->change();
@@ -108,6 +113,9 @@ return new class extends Migration
             DB::statement('CREATE UNIQUE INDEX users_google_id_unique on users (google_id);');
 
             DB::statement('PRAGMA foreign_keys=ON;');
+        } elseif (config('database.default') === 'pgsql' || DB::getDriverName() === 'pgsql') {
+             DB::statement("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check");
+             DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('student', 'admin'))");
         } else {
             Schema::table('users', function (Blueprint $table) {
                 $table->enum('role', ['student', 'admin'])->default('student')->change();
