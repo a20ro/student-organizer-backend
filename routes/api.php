@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\AdminSystemController;
 use App\Http\Controllers\Admin\AdminLogController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\StudentDashboardController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -39,6 +40,7 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 Route::middleware(['auth:sanctum', 'session.activity'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/dashboard/summary', [StudentDashboardController::class, 'summary']);
 
     // Semesters CRUD
     Route::get('/semesters', [SemesterController::class, 'index']);

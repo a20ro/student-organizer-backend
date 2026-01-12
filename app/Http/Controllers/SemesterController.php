@@ -14,6 +14,7 @@ class SemesterController extends Controller
     public function index(Request $request): JsonResponse
     {
         $semesters = Semester::where('user_id', $request->user()->id)
+            ->with('courses')
             ->orderByDesc('created_at')
             ->get();
 

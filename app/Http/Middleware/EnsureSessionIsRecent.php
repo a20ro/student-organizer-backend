@@ -68,10 +68,13 @@ class EnsureSessionIsRecent
             ], 401);
         }
 
-        // Otherwise, update last_activity and continue.
-        $session->last_activity = Carbon::now();
-        $session->is_active = true;
-        $session->save();
+        // Otherwise, update last_activity and continue, but throttle updates to reduce DB noise.
+        $now = Carbon::now();
+        if (!$session->last_activity || $session->last_activity->diffInMinutes($now) >= 1) {
+            $session->last_activity = $now;
+            $session->is_active = true;
+            $session->save();
+        }
 
         return $next($request);
     }
