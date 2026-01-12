@@ -49,6 +49,7 @@ class EnsureSessionIsRecent
             return response()->json([
                 'success' => false,
                 'message' => 'Your session has expired. Please log in again.',
+                'redirect_url' => 'https://studentorganizer.netlify.app/login.html'
             ], 401);
         }
 
@@ -65,6 +66,7 @@ class EnsureSessionIsRecent
             return response()->json([
                 'success' => false,
                 'message' => 'Your session has expired due to 30 minutes of inactivity. Please log in again.',
+                'redirect_url' => 'https://studentorganizer.netlify.app/login.html'
             ], 401);
         }
 
